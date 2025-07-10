@@ -29,34 +29,24 @@
         private void InitializeComponent()
         {
             this.reportViewer1 = new Microsoft.Reporting.WinForms.ReportViewer();
-            this.btnCetakLaporan = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // reportViewer1
             // 
             this.reportViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.reportViewer1.Location = new System.Drawing.Point(0, 0);
+            this.reportViewer1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.reportViewer1.Name = "reportViewer1";
-            this.reportViewer1.Size = new System.Drawing.Size(800, 450);
+            this.reportViewer1.Size = new System.Drawing.Size(900, 562);
             this.reportViewer1.TabIndex = 0;
-            // 
-            // btnCetakLaporan
-            // 
-            this.btnCetakLaporan.Location = new System.Drawing.Point(408, 401);
-            this.btnCetakLaporan.Name = "btnCetakLaporan";
-            this.btnCetakLaporan.Size = new System.Drawing.Size(143, 37);
-            this.btnCetakLaporan.TabIndex = 1;
-            this.btnCetakLaporan.Text = "Cetak Laporan";
-            this.btnCetakLaporan.UseVisualStyleBackColor = true;
-            this.btnCetakLaporan.Click += new System.EventHandler(this.btnCetakLaporan_Click);
             // 
             // FormLaporanLayanan
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.btnCetakLaporan);
+            this.ClientSize = new System.Drawing.Size(900, 562);
             this.Controls.Add(this.reportViewer1);
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "FormLaporanLayanan";
             this.Text = "FormLaporanLayanan";
             this.Load += new System.EventHandler(this.FormLaporanLayanan_Load);
@@ -67,6 +57,5 @@
         #endregion
 
         private Microsoft.Reporting.WinForms.ReportViewer reportViewer1;
-        private System.Windows.Forms.Button btnCetakLaporan;
     }
 }

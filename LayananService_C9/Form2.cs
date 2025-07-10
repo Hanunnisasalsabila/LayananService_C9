@@ -67,7 +67,7 @@ namespace LayananService_C9
             PictureBox background = new PictureBox
             {
                 Dock = DockStyle.Fill,
-                Image = Image.FromFile("C:\\Users\\Acer\\OneDrive\\Pictures\\860.jpeg"),
+                Image = Properties.Resources.otomotif,
                 SizeMode = PictureBoxSizeMode.StretchImage
             };
             this.Controls.Add(background);
@@ -156,55 +156,96 @@ namespace LayananService_C9
             dgvLayanan.ClearSelection();
         }
 
+        private void HandleSqlException(SqlException sqlEx)
+        {
+            // Eror 2627: Pelanggaran UNIQUE KEY (data duplikat)
+            if (sqlEx.Number == 2627)
+            {
+                if (sqlEx.Message.Contains("Nama_Layanan"))
+                {
+                    MessageBox.Show("Gagal. Nama layanan ini sudah ada. Silakan gunakan nama lain.", "Data Duplikat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Gagal menyimpan karena ada data yang sama di database.", "Data Duplikat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            // Eror 547: Pelanggaran CHECK constraint (format data salah)
+            else if (sqlEx.Number == 547)
+            {
+                if (sqlEx.Message.Contains("Nama_Layanan"))
+                {
+                    MessageBox.Show("Nama layanan hanya boleh berisi huruf dan spasi.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("Harga"))
+                {
+                    MessageBox.Show("Harga layanan tidak boleh negatif.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                // BARU: Menangani eror untuk Kategori Layanan
+                else if (sqlEx.Message.Contains("Kategori_Layanan"))
+                {
+                    MessageBox.Show("Kategori layanan tidak valid. Harap pilih 'Standar' atau 'Premium'.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Data yang Anda masukkan tidak sesuai format yang ditentukan.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            // Untuk eror SQL lainnya
+            else
+            {
+                MessageBox.Show("Terjadi kesalahan pada database: " + sqlEx.Message, "Error Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void btnSimpan_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNamaLayanan.Text) || numHarga.Value <= 0)
+            if (string.IsNullOrWhiteSpace(txtNamaLayanan.Text))
             {
-                MessageBox.Show("Nama layanan dan harga harus diisi dengan benar.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Nama layanan harus diisi.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (numHarga.Value < 0)
+            {
+                MessageBox.Show("Harga tidak boleh negatif.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (cmbKategori.SelectedItem == null)
+            {
+                MessageBox.Show("Kategori layanan tidak valid. Harap pilih 'Standar' atau 'Premium'.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             using (SqlConnection conn = Koneksi.GetConnection())
             {
-                // BARU: Deklarasi transaksi
                 SqlTransaction transaction = null;
-
                 try
                 {
                     conn.Open();
-                    // BARU: Memulai transaksi
                     transaction = conn.BeginTransaction();
 
-                    SqlCommand cmd = new SqlCommand("sp_CreateLayanan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
+                    SqlCommand cmd = new SqlCommand("sp_CreateLayanan", conn, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
-
                     cmd.Parameters.AddWithValue("@Nama_Layanan", txtNamaLayanan.Text);
                     cmd.Parameters.AddWithValue("@Harga", numHarga.Value);
                     cmd.Parameters.AddWithValue("@Kategori_Layanan", cmbKategori.SelectedItem.ToString());
-
                     cmd.ExecuteNonQuery();
-
-                    // BARU: Jika berhasil, commit perubahan
                     transaction.Commit();
 
                     MessageBox.Show("Data layanan berhasil ditambahkan!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                     _cache.Remove(CacheKeyLayanan);
                     TampilkanDataLayanan();
                     BersihkanFormLayanan();
                 }
+                catch (SqlException sqlEx)
+                {
+                    transaction?.Rollback();
+                    HandleSqlException(sqlEx); // Panggil metode penanganan eror
+                }
                 catch (Exception ex)
                 {
+                    transaction?.Rollback();
                     MessageBox.Show("Gagal menambahkan data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    try
-                    {
-                        // BARU: Jika gagal, batalkan semua perubahan
-                        transaction?.Rollback();
-                    }
-                    catch (Exception exRollback)
-                    {
-                        MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
                 }
             }
         }
@@ -216,48 +257,53 @@ namespace LayananService_C9
                 MessageBox.Show("Pilih data yang ingin diedit.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (string.IsNullOrWhiteSpace(txtNamaLayanan.Text))
+            {
+                MessageBox.Show("Nama layanan harus diisi.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (numHarga.Value < 0)
+            {
+                MessageBox.Show("Harga tidak boleh negatif.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (cmbKategori.SelectedItem == null)
+            {
+                MessageBox.Show("Kategori layanan tidak valid. Harap pilih 'Standar' atau 'Premium'.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             using (SqlConnection conn = Koneksi.GetConnection())
             {
-                // BARU: Deklarasi transaksi
                 SqlTransaction transaction = null;
                 try
                 {
                     conn.Open();
-                    // BARU: Memulai transaksi
                     transaction = conn.BeginTransaction();
 
-                    SqlCommand cmd = new SqlCommand("sp_UpdateLayanan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
+                    SqlCommand cmd = new SqlCommand("sp_UpdateLayanan", conn, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
-
                     cmd.Parameters.AddWithValue("@ID_Layanan", Convert.ToInt32(txtIDLayanan.Text));
                     cmd.Parameters.AddWithValue("@Nama_Layanan", txtNamaLayanan.Text);
                     cmd.Parameters.AddWithValue("@Harga", numHarga.Value);
                     cmd.Parameters.AddWithValue("@Kategori_Layanan", cmbKategori.SelectedItem.ToString());
-
                     cmd.ExecuteNonQuery();
-
-                    // BARU: Jika berhasil, commit perubahan
                     transaction.Commit();
 
                     MessageBox.Show("Data layanan berhasil diperbarui!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                     _cache.Remove(CacheKeyLayanan);
                     TampilkanDataLayanan();
                     BersihkanFormLayanan();
                 }
+                catch (SqlException sqlEx)
+                {
+                    transaction?.Rollback();
+                    HandleSqlException(sqlEx); // Panggil metode penanganan eror
+                }
                 catch (Exception ex)
                 {
+                    transaction?.Rollback();
                     MessageBox.Show("Gagal mengedit data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    try
-                    {
-                        // BARU: Jika gagal, batalkan semua perubahan
-                        transaction?.Rollback();
-                    }
-                    catch (Exception exRollback)
-                    {
-                        MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
                 }
             }
         }
@@ -274,41 +320,26 @@ namespace LayananService_C9
             {
                 using (SqlConnection conn = Koneksi.GetConnection())
                 {
-                    // BARU: Deklarasi transaksi
                     SqlTransaction transaction = null;
                     try
                     {
                         conn.Open();
-                        // BARU: Memulai transaksi
                         transaction = conn.BeginTransaction();
-
-                        SqlCommand cmd = new SqlCommand("sp_DeleteLayanan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
+                        SqlCommand cmd = new SqlCommand("sp_DeleteLayanan", conn, transaction);
                         cmd.CommandType = CommandType.StoredProcedure;
-
                         cmd.Parameters.AddWithValue("@ID_Layanan", Convert.ToInt32(txtIDLayanan.Text));
                         cmd.ExecuteNonQuery();
-
-                        // BARU: Jika berhasil, commit perubahan
                         transaction.Commit();
 
                         MessageBox.Show("Data layanan berhasil dihapus!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                         _cache.Remove(CacheKeyLayanan);
                         TampilkanDataLayanan();
                         BersihkanFormLayanan();
                     }
                     catch (Exception ex)
                     {
+                        transaction?.Rollback();
                         MessageBox.Show("Gagal menghapus data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        try
-                        {
-                            // BARU: Jika gagal, batalkan semua perubahan
-                            transaction?.Rollback();
-                        }
-                        catch (Exception exRollback)
-                        {
-                            MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
                     }
                 }
             }
@@ -317,6 +348,8 @@ namespace LayananService_C9
         private void btnBatal_Click(object sender, EventArgs e)
         {
             BersihkanFormLayanan();
+            txtSearchLayanan.Text = "";
+            TampilkanDataLayanan();
         }
 
         private void dgvLayanan_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -357,112 +390,110 @@ namespace LayananService_C9
 
         private void btnImportData_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Excel Files|*.xlsx;*.xlsm";
-            openFileDialog.Title = "Pilih File Excel untuk Import Data Layanan";
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Excel Files|*.xlsx",
+                Title = "Pilih File Excel untuk Impor Data Pelanggan"
+            };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string filePath = openFileDialog.FileName;
-                PreviewData(filePath);
+                PreviewDataFromExcel(filePath);
             }
         }
 
-        private void PreviewData(string filePath)
+        private void PreviewDataFromExcel(string filePath)
         {
             try
             {
                 DataTable dt = new DataTable();
-
-                using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
-                    XSSFWorkbook workbook = new XSSFWorkbook(file);
+                    IWorkbook workbook = new XSSFWorkbook(fs);
                     ISheet sheet = workbook.GetSheetAt(0);
 
-                    // Baca header row (baris pertama)
                     IRow headerRow = sheet.GetRow(0);
-                    if (headerRow != null)
+                    foreach (ICell headerCell in headerRow.Cells)
                     {
-                        // Buat kolom berdasarkan header
-                        foreach (var cell in headerRow.Cells)
-                        {
-                            dt.Columns.Add(cell.ToString());
-                        }
-                    }
-                    else
-                    {
-                        // Jika tidak ada header, buat kolom default untuk layanan
-                        dt.Columns.Add("Nama_Layanan");
-                        dt.Columns.Add("Harga");
-                        dt.Columns.Add("Kategori_Layanan");
+                        dt.Columns.Add(headerCell.ToString());
                     }
 
-                    // Baca data dari baris kedua hingga terakhir
-                    for (int i = 1; i <= sheet.LastRowNum; i++)
+                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
                     {
-                        IRow dataRow = sheet.GetRow(i);
-                        if (dataRow != null)
+                        IRow dataRowExcel = sheet.GetRow(i);
+                        if (dataRowExcel == null) continue;
+
+                        DataRow newDataRow = dt.NewRow();
+                        for (int j = 0; j < headerRow.LastCellNum; j++)
                         {
-                            DataRow newRow = dt.NewRow();
-
-                            for (int cellIndex = 0; cellIndex < dt.Columns.Count && cellIndex < dataRow.Cells.Count; cellIndex++)
-                            {
-                                var cell = dataRow.GetCell(cellIndex);
-                                if (cell != null)
-                                {
-                                    // Handle different cell types
-                                    switch (cell.CellType)
-                                    {
-                                        case CellType.String:
-                                            newRow[cellIndex] = cell.StringCellValue;
-                                            break;
-                                        case CellType.Numeric:
-                                            newRow[cellIndex] = cell.NumericCellValue.ToString();
-                                            break;
-                                        case CellType.Boolean:
-                                            newRow[cellIndex] = cell.BooleanCellValue.ToString();
-                                            break;
-                                        case CellType.Formula:
-                                            try
-                                            {
-                                                newRow[cellIndex] = cell.NumericCellValue.ToString();
-                                            }
-                                            catch
-                                            {
-                                                newRow[cellIndex] = cell.StringCellValue;
-                                            }
-                                            break;
-                                        default:
-                                            newRow[cellIndex] = "";
-                                            break;
-                                    }
-                                }
-                                else
-                                {
-                                    newRow[cellIndex] = "";
-                                }
-                            }
-
-                            dt.Rows.Add(newRow);
+                            ICell cell = dataRowExcel.GetCell(j);
+                            newDataRow[j] = (cell == null) ? string.Empty : cell.ToString();
                         }
+                        dt.Rows.Add(newDataRow);
                     }
                 }
 
-                // Tampilkan preview form
-                PreviewFormLayanan previewForm = new PreviewFormLayanan(dt);
-                if (previewForm.ShowDialog() == DialogResult.OK)
+                using (PreviewFormLayanan previewForm = new PreviewFormLayanan(dt))
                 {
-                    // Refresh data setelah import berhasil
-                    _cache.Remove(CacheKeyLayanan);
-                    TampilkanDataLayanan();
-                    MessageBox.Show("Import data selesai. Data layanan telah diperbarui.",
-                        "Import Berhasil", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    var result = previewForm.ShowDialog();
+                    if (result == DialogResult.OK)
+                    {
+                        MessageBox.Show("Data di form utama akan diperbarui.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        _cache.Remove(CacheKeyLayanan);
+                        TampilkanDataLayanan();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saat membaca file Excel: {ex.Message}",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error saat membaca file Excel: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void SearchLayanan(string searchTerm)
+        {
+            try
+            {
+                using (SqlConnection conn = Koneksi.GetConnection())
+                {
+                    SqlCommand cmd = new SqlCommand("sp_SearchLayanan", conn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@SearchTerm", searchTerm);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    dgvLayanan.DataSource = dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal melakukan pencarian: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSearchLayanan_Click(object sender, EventArgs e)
+        {
+            string searchTerm = txtSearchLayanan.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                TampilkanDataLayanan();
+            }
+            else
+            {
+                SearchLayanan(searchTerm);
+            }
+        }
+
+        private void txtSearchLayanan_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnSearchLayanan_Click(this, new EventArgs());
+                e.SuppressKeyPress = true;
             }
         }
     }

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form2));
             this.txtIDLayanan = new System.Windows.Forms.TextBox();
             this.txtNamaLayanan = new System.Windows.Forms.TextBox();
             this.numHarga = new System.Windows.Forms.NumericUpDown();
@@ -44,6 +45,8 @@
             this.btnCetakLaporan = new System.Windows.Forms.Button();
             this.btnAnalisis = new System.Windows.Forms.Button();
             this.btnImportData = new System.Windows.Forms.Button();
+            this.txtSearchLayanan = new System.Windows.Forms.TextBox();
+            this.button1 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numHarga)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLayanan)).BeginInit();
             this.SuspendLayout();
@@ -52,10 +55,11 @@
             // 
             this.txtIDLayanan.Enabled = false;
             this.txtIDLayanan.ForeColor = System.Drawing.SystemColors.ScrollBar;
-            this.txtIDLayanan.Location = new System.Drawing.Point(123, 99);
+            this.txtIDLayanan.Location = new System.Drawing.Point(138, 124);
+            this.txtIDLayanan.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.txtIDLayanan.Name = "txtIDLayanan";
             this.txtIDLayanan.ReadOnly = true;
-            this.txtIDLayanan.Size = new System.Drawing.Size(240, 22);
+            this.txtIDLayanan.Size = new System.Drawing.Size(270, 26);
             this.txtIDLayanan.TabIndex = 0;
             this.txtIDLayanan.Text = "ID Layanan";
             this.txtIDLayanan.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -63,9 +67,10 @@
             // txtNamaLayanan
             // 
             this.txtNamaLayanan.ForeColor = System.Drawing.SystemColors.InfoText;
-            this.txtNamaLayanan.Location = new System.Drawing.Point(123, 142);
+            this.txtNamaLayanan.Location = new System.Drawing.Point(138, 178);
+            this.txtNamaLayanan.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.txtNamaLayanan.Name = "txtNamaLayanan";
-            this.txtNamaLayanan.Size = new System.Drawing.Size(240, 22);
+            this.txtNamaLayanan.Size = new System.Drawing.Size(270, 26);
             this.txtNamaLayanan.TabIndex = 1;
             this.txtNamaLayanan.Text = "Nama Layanan";
             this.txtNamaLayanan.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -73,14 +78,15 @@
             // numHarga
             // 
             this.numHarga.DecimalPlaces = 2;
-            this.numHarga.Location = new System.Drawing.Point(163, 203);
+            this.numHarga.Location = new System.Drawing.Point(183, 254);
+            this.numHarga.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.numHarga.Maximum = new decimal(new int[] {
             10000000,
             0,
             0,
             0});
             this.numHarga.Name = "numHarga";
-            this.numHarga.Size = new System.Drawing.Size(158, 22);
+            this.numHarga.Size = new System.Drawing.Size(178, 26);
             this.numHarga.TabIndex = 2;
             this.numHarga.ThousandsSeparator = true;
             // 
@@ -90,27 +96,30 @@
             this.cmbKategori.Items.AddRange(new object[] {
             "Standar",
             "Premium"});
-            this.cmbKategori.Location = new System.Drawing.Point(163, 255);
+            this.cmbKategori.Location = new System.Drawing.Point(183, 319);
+            this.cmbKategori.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.cmbKategori.Name = "cmbKategori";
-            this.cmbKategori.Size = new System.Drawing.Size(158, 24);
+            this.cmbKategori.Size = new System.Drawing.Size(177, 28);
             this.cmbKategori.TabIndex = 3;
             // 
             // dgvLayanan
             // 
             this.dgvLayanan.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvLayanan.Location = new System.Drawing.Point(501, 92);
+            this.dgvLayanan.Location = new System.Drawing.Point(564, 115);
+            this.dgvLayanan.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.dgvLayanan.Name = "dgvLayanan";
             this.dgvLayanan.RowHeadersWidth = 51;
             this.dgvLayanan.RowTemplate.Height = 24;
-            this.dgvLayanan.Size = new System.Drawing.Size(665, 351);
+            this.dgvLayanan.Size = new System.Drawing.Size(748, 439);
             this.dgvLayanan.TabIndex = 4;
             this.dgvLayanan.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvLayanan_CellClick);
             // 
             // btnSimpan
             // 
-            this.btnSimpan.Location = new System.Drawing.Point(145, 323);
+            this.btnSimpan.Location = new System.Drawing.Point(163, 404);
+            this.btnSimpan.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnSimpan.Name = "btnSimpan";
-            this.btnSimpan.Size = new System.Drawing.Size(85, 29);
+            this.btnSimpan.Size = new System.Drawing.Size(96, 36);
             this.btnSimpan.TabIndex = 6;
             this.btnSimpan.Text = "Simpan";
             this.btnSimpan.UseVisualStyleBackColor = true;
@@ -118,9 +127,10 @@
             // 
             // btnEdit
             // 
-            this.btnEdit.Location = new System.Drawing.Point(260, 323);
+            this.btnEdit.Location = new System.Drawing.Point(292, 404);
+            this.btnEdit.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnEdit.Name = "btnEdit";
-            this.btnEdit.Size = new System.Drawing.Size(79, 29);
+            this.btnEdit.Size = new System.Drawing.Size(89, 36);
             this.btnEdit.TabIndex = 7;
             this.btnEdit.Text = "Edit";
             this.btnEdit.UseVisualStyleBackColor = true;
@@ -128,9 +138,10 @@
             // 
             // btnHapus
             // 
-            this.btnHapus.Location = new System.Drawing.Point(145, 375);
+            this.btnHapus.Location = new System.Drawing.Point(163, 469);
+            this.btnHapus.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnHapus.Name = "btnHapus";
-            this.btnHapus.Size = new System.Drawing.Size(85, 29);
+            this.btnHapus.Size = new System.Drawing.Size(96, 36);
             this.btnHapus.TabIndex = 8;
             this.btnHapus.Text = "Hapus";
             this.btnHapus.UseVisualStyleBackColor = true;
@@ -138,9 +149,10 @@
             // 
             // btnBatal
             // 
-            this.btnBatal.Location = new System.Drawing.Point(260, 375);
+            this.btnBatal.Location = new System.Drawing.Point(292, 469);
+            this.btnBatal.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnBatal.Name = "btnBatal";
-            this.btnBatal.Size = new System.Drawing.Size(79, 29);
+            this.btnBatal.Size = new System.Drawing.Size(89, 36);
             this.btnBatal.TabIndex = 9;
             this.btnBatal.Text = "Batal";
             this.btnBatal.UseVisualStyleBackColor = true;
@@ -148,10 +160,10 @@
             // 
             // btnPelanggan
             // 
-            this.btnPelanggan.Location = new System.Drawing.Point(537, 492);
+            this.btnPelanggan.Location = new System.Drawing.Point(604, 615);
             this.btnPelanggan.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnPelanggan.Name = "btnPelanggan";
-            this.btnPelanggan.Size = new System.Drawing.Size(258, 36);
+            this.btnPelanggan.Size = new System.Drawing.Size(290, 45);
             this.btnPelanggan.TabIndex = 10;
             this.btnPelanggan.Text = "Pelanggan";
             this.btnPelanggan.UseVisualStyleBackColor = true;
@@ -159,10 +171,10 @@
             // 
             // btnPemesanan
             // 
-            this.btnPemesanan.Location = new System.Drawing.Point(873, 492);
+            this.btnPemesanan.Location = new System.Drawing.Point(982, 615);
             this.btnPemesanan.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.btnPemesanan.Name = "btnPemesanan";
-            this.btnPemesanan.Size = new System.Drawing.Size(258, 36);
+            this.btnPemesanan.Size = new System.Drawing.Size(290, 45);
             this.btnPemesanan.TabIndex = 11;
             this.btnPemesanan.Text = "Pemesanan";
             this.btnPemesanan.UseVisualStyleBackColor = true;
@@ -171,26 +183,27 @@
             // labelJumlahHarga
             // 
             this.labelJumlahHarga.AutoSize = true;
-            this.labelJumlahHarga.Location = new System.Drawing.Point(31, 205);
+            this.labelJumlahHarga.Location = new System.Drawing.Point(35, 256);
             this.labelJumlahHarga.Name = "labelJumlahHarga";
-            this.labelJumlahHarga.Size = new System.Drawing.Size(91, 16);
+            this.labelJumlahHarga.Size = new System.Drawing.Size(108, 20);
             this.labelJumlahHarga.TabIndex = 14;
             this.labelJumlahHarga.Text = "Jumlah Harga";
             // 
             // labelKategoriLayanan
             // 
             this.labelKategoriLayanan.AutoSize = true;
-            this.labelKategoriLayanan.Location = new System.Drawing.Point(31, 258);
+            this.labelKategoriLayanan.Location = new System.Drawing.Point(35, 322);
             this.labelKategoriLayanan.Name = "labelKategoriLayanan";
-            this.labelKategoriLayanan.Size = new System.Drawing.Size(112, 16);
+            this.labelKategoriLayanan.Size = new System.Drawing.Size(133, 20);
             this.labelKategoriLayanan.TabIndex = 15;
             this.labelKategoriLayanan.Text = "Kategori Layanan";
             // 
             // btnCetakLaporan
             // 
-            this.btnCetakLaporan.Location = new System.Drawing.Point(145, 474);
+            this.btnCetakLaporan.Location = new System.Drawing.Point(163, 592);
+            this.btnCetakLaporan.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnCetakLaporan.Name = "btnCetakLaporan";
-            this.btnCetakLaporan.Size = new System.Drawing.Size(194, 40);
+            this.btnCetakLaporan.Size = new System.Drawing.Size(218, 50);
             this.btnCetakLaporan.TabIndex = 16;
             this.btnCetakLaporan.Text = "Cetak Laporan";
             this.btnCetakLaporan.UseVisualStyleBackColor = true;
@@ -198,9 +211,10 @@
             // 
             // btnAnalisis
             // 
-            this.btnAnalisis.Location = new System.Drawing.Point(145, 530);
+            this.btnAnalisis.Location = new System.Drawing.Point(163, 662);
+            this.btnAnalisis.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnAnalisis.Name = "btnAnalisis";
-            this.btnAnalisis.Size = new System.Drawing.Size(194, 36);
+            this.btnAnalisis.Size = new System.Drawing.Size(218, 45);
             this.btnAnalisis.TabIndex = 17;
             this.btnAnalisis.Text = "Analisis";
             this.btnAnalisis.UseVisualStyleBackColor = true;
@@ -208,19 +222,42 @@
             // 
             // btnImportData
             // 
-            this.btnImportData.Location = new System.Drawing.Point(145, 420);
+            this.btnImportData.Location = new System.Drawing.Point(163, 525);
+            this.btnImportData.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnImportData.Name = "btnImportData";
-            this.btnImportData.Size = new System.Drawing.Size(194, 38);
+            this.btnImportData.Size = new System.Drawing.Size(218, 48);
             this.btnImportData.TabIndex = 18;
             this.btnImportData.Text = "Import Data";
             this.btnImportData.UseVisualStyleBackColor = true;
             this.btnImportData.Click += new System.EventHandler(this.btnImportData_Click);
             // 
+            // txtSearchLayanan
+            // 
+            this.txtSearchLayanan.Location = new System.Drawing.Point(613, 63);
+            this.txtSearchLayanan.Name = "txtSearchLayanan";
+            this.txtSearchLayanan.Size = new System.Drawing.Size(298, 26);
+            this.txtSearchLayanan.TabIndex = 19;
+            this.txtSearchLayanan.Text = "Search";
+            this.txtSearchLayanan.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSearchLayanan_KeyDown);
+            // 
+            // button1
+            // 
+            this.button1.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("button1.BackgroundImage")));
+            this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.button1.Location = new System.Drawing.Point(942, 63);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(36, 26);
+            this.button1.TabIndex = 20;
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.btnSearchLayanan_Click);
+            // 
             // Form2
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1203, 578);
+            this.ClientSize = new System.Drawing.Size(1353, 722);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.txtSearchLayanan);
             this.Controls.Add(this.btnImportData);
             this.Controls.Add(this.btnAnalisis);
             this.Controls.Add(this.btnCetakLaporan);
@@ -237,6 +274,7 @@
             this.Controls.Add(this.numHarga);
             this.Controls.Add(this.txtNamaLayanan);
             this.Controls.Add(this.txtIDLayanan);
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.Name = "Form2";
             this.Text = "Layanan Service C9";
             this.Load += new System.EventHandler(this.Form2_Load);
@@ -265,5 +303,7 @@
         private System.Windows.Forms.Button btnCetakLaporan;
         private System.Windows.Forms.Button btnAnalisis;
         private System.Windows.Forms.Button btnImportData;
+        private System.Windows.Forms.TextBox txtSearchLayanan;
+        private System.Windows.Forms.Button button1;
     }
 }

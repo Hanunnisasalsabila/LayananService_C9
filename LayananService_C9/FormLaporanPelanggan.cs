@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,32 +29,38 @@ namespace LayananService_C9
 
         private void SetupReport()
         {
-            string connectionString = "Data Source=LAPTOP-DKIM0LL5\\HANUNNISA;Initial Catalog=SistemManajemenPelanggandanLayananOtomotifff;Integrated Security=True";
-
-            // 2. Definisikan query SQL untuk mengambil data yang diperlukan
+            // 1. Definisikan query SQL
             string query = "SELECT ID_Pelanggan, Nama_Pelanggan, Email, No_Telp, Poin_Loyalitas FROM Pelanggan";
 
-            // 3. Buat DataTable untuk menampung data dari database
+            // 2. Buat DataTable untuk menampung data
             DataTable dt = new DataTable();
 
-            // 4. Gunakan SqlDataAdapter untuk mengisi DataTable
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            // 3. Gunakan koneksi dari kelas Koneksi untuk mengisi DataTable
+            using (SqlConnection conn = Koneksi.GetConnection())
             {
                 SqlDataAdapter da = new SqlDataAdapter(query, conn);
                 da.Fill(dt);
             }
 
-            // 5. Buat ReportDataSource
-            // Pastikan nama "DataSetPelanggan" SAMA PERSIS dengan nama DataSet di file .rdlc Anda.
+            // 4. Buat ReportDataSource
             ReportDataSource rds = new ReportDataSource("DataSet1", dt);
 
-            // 6. Konfigurasi ReportViewer
+            // 5. Konfigurasi ReportViewer dengan path dinamis
             reportViewer1.LocalReport.DataSources.Clear();
             reportViewer1.LocalReport.DataSources.Add(rds);
 
-            reportViewer1.LocalReport.ReportPath = @"E:\PABD\LayananService_C9_UCPDua\LayananService_C9_UCP1\LayananService_C9_AlmostFinished\LayananService_C9\LaporanPelanggan.rdlc";
-        }
+            // --- BAGIAN YANG DIUBAH ---
+            // Mengambil path folder tempat .exe berjalan
+            string appPath = AppDomain.CurrentDomain.BaseDirectory;
+            // Menggabungkan path folder dengan nama file .rdlc
+            string reportPath = Path.Combine(appPath, "LaporanPelanggan.rdlc");
 
+            reportViewer1.LocalReport.ReportPath = reportPath;
+            // -------------------------
+
+            // Refresh report viewer
+            reportViewer1.RefreshReport();
+        }
         private void btnCetakLaporan_Click(object sender, EventArgs e)
         {
             FormLaporanPelanggan formLaporan = new FormLaporanPelanggan();

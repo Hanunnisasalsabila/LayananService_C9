@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 using System.Windows.Forms;
 
 namespace LayananService_C9
@@ -33,20 +34,20 @@ namespace LayananService_C9
         {
             // 1. Definisikan query untuk mengambil data laporan
             string query = @"
-                SELECT 
-                    pl.ID_Pemesanan, p.Nama_Pelanggan, p.Poin_Loyalitas,
-                    l.Nama_Layanan, pl.Tanggal_Pemesanan, pl.Jumlah_Layanan, 
-                    pl.Total_Biaya, pl.Status_Pembayaran
-                FROM 
-                    PemesananLayanan pl
-                JOIN 
-                    Pelanggan p ON p.ID_Pelanggan = pl.ID_Pelanggan
-                JOIN 
-                    Layanan l ON l.ID_Layanan = pl.ID_Layanan";
+        SELECT 
+            pl.ID_Pemesanan, p.Nama_Pelanggan, p.Poin_Loyalitas,
+            l.Nama_Layanan, pl.Tanggal_Pemesanan, pl.Jumlah_Layanan, 
+            pl.Total_Biaya, pl.Status_Pembayaran
+        FROM 
+            PemesananLayanan pl
+        JOIN 
+            Pelanggan p ON p.ID_Pelanggan = pl.ID_Pelanggan
+        JOIN 
+            Layanan l ON l.ID_Layanan = pl.ID_Layanan";
 
             DataTable dt = new DataTable();
 
-            // 2. Isi DataTable menggunakan koneksi dan query
+            // 2. Isi DataTable (kode ini sudah benar)
             using (SqlConnection conn = Koneksi.GetConnection())
             {
                 SqlDataAdapter da = new SqlDataAdapter(query, conn);
@@ -54,15 +55,20 @@ namespace LayananService_C9
             }
 
             // 3. Buat ReportDataSource
-            //    Nama "DataSetPemesanan" HARUS SAMA dengan nama DataSet di file .rdlc Anda
             ReportDataSource rds = new ReportDataSource("DataSet1", dt);
 
-            // 4. Konfigurasi ReportViewer
+            // 4. Konfigurasi ReportViewer dengan path dinamis
             reportViewer1.LocalReport.DataSources.Clear();
             reportViewer1.LocalReport.DataSources.Add(rds);
 
-            // PENTING: Ganti path ini dengan path absolut ke file LaporanPemesanan.rdlc di komputer Anda
-            reportViewer1.LocalReport.ReportPath = @"E:\PABD\LayananService_C9_UCPDua\LayananService_C9_UCP1\LayananService_C9_AlmostFinished\LayananService_C9\LaporanPemesanan.rdlc";
+            // --- BAGIAN YANG DIUBAH ---
+            string appPath = AppDomain.CurrentDomain.BaseDirectory;
+            string reportPath = Path.Combine(appPath, "LaporanPemesanan.rdlc");
+
+            reportViewer1.LocalReport.ReportPath = reportPath;
+            // -------------------------
+
+            reportViewer1.RefreshReport();
         }
 
         private void btnCetakLaporan_Click(object sender, EventArgs e)

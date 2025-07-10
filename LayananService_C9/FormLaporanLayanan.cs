@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,21 +28,34 @@ namespace LayananService_C9
         }
         private void SetupReport()
         {
-            string connectionString = "Data Source=LAPTOP-DKIM0LL5\\HANUNNISA;Initial Catalog=SistemManajemenPelanggandanLayananOtomotifff;Integrated Security=True";
+            // 1. Definisikan query SQL
             string query = "SELECT ID_Layanan, Nama_Layanan, Harga, Kategori_Layanan FROM Layanan";
 
+            // 2. Buat DataTable
             DataTable dt = new DataTable();
-            using (SqlConnection conn = new SqlConnection(connectionString))
+
+            // 3. Gunakan koneksi terpusat
+            using (SqlConnection conn = Koneksi.GetConnection())
             {
                 SqlDataAdapter da = new SqlDataAdapter(query, conn);
                 da.Fill(dt);
             }
+
+            // 4. Buat ReportDataSource
             ReportDataSource rds = new ReportDataSource("DataSet1", dt);
 
+            // 5. Konfigurasi ReportViewer dengan path dinamis
             reportViewer1.LocalReport.DataSources.Clear();
             reportViewer1.LocalReport.DataSources.Add(rds);
 
-            reportViewer1.LocalReport.ReportPath = @"E:\PABD\LayananService_C9_UCPDua\LayananService_C9_UCP1\LayananService_C9_AlmostFinished\LayananService_C9\LaporanLayanan.rdlc";
+            // Mengambil path dari folder instalasi aplikasi
+            string appPath = AppDomain.CurrentDomain.BaseDirectory;
+            // Menggabungkan path dengan nama file laporan
+            string reportPath = Path.Combine(appPath, "LaporanLayanan.rdlc");
+
+            reportViewer1.LocalReport.ReportPath = reportPath;
+
+            // Refresh report
             reportViewer1.RefreshReport();
         }
 

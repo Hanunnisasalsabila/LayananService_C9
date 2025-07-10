@@ -138,7 +138,10 @@ namespace LayananService_C9
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-
+            Form2 form2 = new Form2();
+            this.Hide();
+            form2.ShowDialog();
+            this.Show();
         }
     }
 }

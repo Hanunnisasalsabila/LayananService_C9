@@ -4,21 +4,18 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Text;
-using System.Runtime.Caching; // Diperlukan untuk Caching
+using System.Runtime.Caching;
 
 namespace LayananService_C9
 {
     public partial class FormPemesananLayanan : Form
     {
-        // Inisialisasi cache dan kebijakan kadaluarsa
         private readonly MemoryCache cache = MemoryCache.Default;
         private readonly CacheItemPolicy policy = new CacheItemPolicy
         {
-            // Data di cache akan kadaluarsa setelah 5 menit
             AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5)
         };
 
-        // Kunci unik untuk cache
         private const string CacheKeyPelanggan = "PelangganData";
         private const string CacheKeyLayanan = "LayananData";
         private const string CacheKeyPemesanan = "PemesananData";
@@ -31,7 +28,7 @@ namespace LayananService_C9
 
         private void FormPemesananLayanan_Load(object sender, EventArgs e)
         {
-            EnsureIndexes(); // Pastikan index ada sebelum memuat data
+            EnsureIndexes();
             TampilkanPelanggan();
             TampilkanLayanan();
             TampilkanDataPemesanan();
@@ -39,14 +36,11 @@ namespace LayananService_C9
 
         private void EnsureIndexes()
         {
-            // Script untuk membuat index jika belum ada
             var indexScript = @"
-            -- Index untuk foreign key di PemesananLayanan untuk mempercepat JOIN
             IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_PemesananLayanan_IDPelanggan')
                 CREATE NONCLUSTERED INDEX IX_PemesananLayanan_IDPelanggan ON dbo.PemesananLayanan(ID_Pelanggan);
             IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_PemesananLayanan_IDLayanan')
                 CREATE NONCLUSTERED INDEX IX_PemesananLayanan_IDLayanan ON dbo.PemesananLayanan(ID_Layanan);
-            -- Index pada tabel Pelanggan
             IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Pelanggan_Nama')
                 CREATE NONCLUSTERED INDEX IX_Pelanggan_Nama ON dbo.Pelanggan(Nama_Pelanggan);
             ";
@@ -63,19 +57,16 @@ namespace LayananService_C9
             }
             catch (Exception ex)
             {
-                // Tampilkan pesan jika gagal membuat index, namun aplikasi tetap berjalan
                 MessageBox.Show("Gagal memastikan indeks database: " + ex.Message, "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-
         private void SetupUI()
         {
-            // Kode UI Anda tetap sama
             PictureBox background = new PictureBox
             {
                 Dock = DockStyle.Fill,
-                Image = Image.FromFile("C:\\Users\\Acer\\OneDrive\\Pictures\\860.jpeg"),
+                Image = Properties.Resources.otomotif,
                 SizeMode = PictureBoxSizeMode.StretchImage
             };
             this.Controls.Add(background);
@@ -96,7 +87,6 @@ namespace LayananService_C9
         {
             if (cache.Contains(CacheKeyPelanggan))
             {
-                // Ambil data dari cache jika ada
                 cmbPelanggan.DataSource = cache.Get(CacheKeyPelanggan) as DataTable;
             }
             else
@@ -107,7 +97,6 @@ namespace LayananService_C9
                     DataTable dt = new DataTable();
                     da.Fill(dt);
                     cmbPelanggan.DataSource = dt;
-                    // Simpan data ke cache
                     cache.Add(CacheKeyPelanggan, dt, policy);
                 }
             }
@@ -120,7 +109,6 @@ namespace LayananService_C9
         {
             if (cache.Contains(CacheKeyLayanan))
             {
-                // Ambil data dari cache
                 cmbLayanan.DataSource = cache.Get(CacheKeyLayanan) as DataTable;
             }
             else
@@ -131,7 +119,6 @@ namespace LayananService_C9
                     DataTable dt = new DataTable();
                     da.Fill(dt);
                     cmbLayanan.DataSource = dt;
-                    // Simpan data ke cache
                     cache.Add(CacheKeyLayanan, dt, policy);
                 }
             }
@@ -142,7 +129,6 @@ namespace LayananService_C9
 
         void TampilkanDataPemesanan()
         {
-            // Selalu ambil data terbaru untuk grid pemesanan, tapi bisa juga di-cache jika diinginkan
             string query = @"SELECT pl.ID_Pemesanan, 
                                     p.Nama_Pelanggan, 
                                     p.Poin_Loyalitas,
@@ -166,9 +152,7 @@ namespace LayananService_C9
 
         void InvalidatePemesananCache()
         {
-            // Hapus cache yang relevan setelah ada perubahan data
             cache.Remove(CacheKeyPemesanan);
-            // Anda mungkin juga ingin merefresh cache pelanggan jika poin loyalitas berubah
             cache.Remove(CacheKeyPelanggan);
         }
 
@@ -195,11 +179,42 @@ namespace LayananService_C9
             }
         }
 
+        // MODIFIKASI: Metode terpusat untuk menangani eror SQL
+        private void HandleSqlException(SqlException sqlEx)
+        {
+            // Eror 547: Pelanggaran CHECK atau FOREIGN KEY constraint
+            if (sqlEx.Number == 547)
+            {
+                if (sqlEx.Message.Contains("FK_Pemesanan_To_Pelanggan"))
+                {
+                    MessageBox.Show("Gagal. Pelanggan yang dipilih tidak valid atau tidak ditemukan.", "Data Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("FK_Pemesanan_To_Layanan"))
+                {
+                    MessageBox.Show("Gagal. Layanan yang dipilih tidak valid atau tidak ditemukan.", "Data Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("Status_Pembayaran"))
+                {
+                    MessageBox.Show("Status pembayaran tidak valid. Harap pilih 'Lunas' atau 'Belum Lunas'.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Data yang Anda masukkan tidak sesuai aturan yang ada di database.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            // Untuk eror SQL lainnya
+            else
+            {
+                MessageBox.Show("Terjadi kesalahan pada database: " + sqlEx.Message, "Error Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void btnSimpan_Click(object sender, EventArgs e)
         {
+            // MODIFIKASI: Validasi input di sisi aplikasi
             if (cmbPelanggan.SelectedValue == null || cmbLayanan.SelectedValue == null || cmbKategori.SelectedItem == null)
             {
-                MessageBox.Show("Harap lengkapi semua data (pelanggan, layanan, dan status).", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Harap pilih semua kolom dengan benar!.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -210,12 +225,10 @@ namespace LayananService_C9
             using (SqlConnection conn = Koneksi.GetConnection())
             {
                 conn.Open();
-                // Deklarasi transaksi
                 SqlTransaction transaction = conn.BeginTransaction();
 
                 try
                 {
-                    // 1. Panggil Stored Procedure untuk membuat pemesanan
                     SqlCommand cmd = new SqlCommand("dbo.sp_CreatePemesananLayanan", conn, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@ID_Pelanggan", idPelanggan);
@@ -226,7 +239,6 @@ namespace LayananService_C9
                     cmd.Parameters.AddWithValue("@Tanggal_Pemesanan", dtpTanggal.Value);
                     cmd.ExecuteNonQuery();
 
-                    // 2. Logika untuk menambah poin loyalitas
                     int poinTambahan = (int)(total / 100000);
                     if (poinTambahan > 0)
                     {
@@ -236,18 +248,21 @@ namespace LayananService_C9
                         cmdPoin.ExecuteNonQuery();
                     }
 
-                    // Jika semua perintah berhasil, simpan perubahan secara permanen
                     transaction.Commit();
 
                     MessageBox.Show("Data pemesanan berhasil disimpan!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     InvalidatePemesananCache();
                     TampilkanDataPemesanan();
-                    TampilkanPelanggan(); // Refresh data pelanggan untuk poin baru
+                    TampilkanPelanggan();
                     BersihkanForm();
+                }
+                catch (SqlException sqlEx)
+                {
+                    transaction.Rollback();
+                    HandleSqlException(sqlEx); // Panggil metode penanganan eror
                 }
                 catch (Exception ex)
                 {
-                    // Jika terjadi error, batalkan semua perubahan dalam transaksi
                     transaction.Rollback();
                     MessageBox.Show("Gagal menyimpan data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -278,18 +293,15 @@ namespace LayananService_C9
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@ID_Pemesanan", idPemesanan);
                         cmd.ExecuteNonQuery();
-
-                        // Commit transaksi jika berhasil
                         transaction.Commit();
 
                         MessageBox.Show("Data berhasil dihapus!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        InvalidatePemesananCache(); // Hapus cache
+                        InvalidatePemesananCache();
                         TampilkanDataPemesanan();
                         BersihkanForm();
                     }
                     catch (Exception ex)
                     {
-                        // Rollback jika terjadi error
                         transaction.Rollback();
                         MessageBox.Show("Gagal menghapus data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
@@ -297,32 +309,26 @@ namespace LayananService_C9
             }
         }
 
+        // ... (Sisa kode seperti Analisis, CellClick, dan navigasi form tetap sama) ...
         private void AnalyzeQuery(string sqlQuery)
         {
-            // Gunakan StringBuilder untuk mengumpulkan semua pesan
             var statsMessages = new StringBuilder();
 
             using (var conn = Koneksi.GetConnection())
             {
-                // Tambahkan event handler untuk mengumpulkan pesan ke StringBuilder
                 conn.InfoMessage += (s, e) => statsMessages.AppendLine(e.Message);
-
                 conn.Open();
-
                 var wrappedQuery = $@"
-        SET STATISTICS IO ON;
-        SET STATISTICS TIME ON;
-
-        {sqlQuery}
-
-        SET STATISTICS IO OFF;
-        SET STATISTICS TIME OFF;";
+                SET STATISTICS IO ON;
+                SET STATISTICS TIME ON;
+                {sqlQuery}
+                SET STATISTICS IO OFF;
+                SET STATISTICS TIME OFF;";
 
                 using (var cmd = new SqlCommand(wrappedQuery, conn))
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
-                        // Loop yang lebih andal untuk memastikan semua hasil dan pesan diproses
                         do
                         {
                             while (reader.Read()) { /* Cukup baca semua baris */ }
@@ -331,21 +337,19 @@ namespace LayananService_C9
                 }
             }
 
-            // Tampilkan semua pesan yang terkumpul dalam satu MessageBox
             if (statsMessages.Length > 0)
             {
                 MessageBox.Show(statsMessages.ToString(), "Informasi Statistik Query");
             }
             else
             {
-                MessageBox.Show("Tidak ada informasi statistik yang dihasilkan. Query mungkin tidak mengembalikan baris data.", "Informasi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Tidak ada informasi statistik yang dihasilkan.", "Informasi", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
 
         private void btnAnalisis_Click(object sender, EventArgs e)
         {
-            // Query berat yang menggabungkan beberapa tabel untuk dianalisis
             string heavyQuery = @"SELECT pl.ID_Pemesanan, 
                                     p.Nama_Pelanggan, 
                                     p.Poin_Loyalitas,
@@ -357,7 +361,7 @@ namespace LayananService_C9
                                FROM PemesananLayanan pl
                                JOIN Pelanggan p ON p.ID_Pelanggan = pl.ID_Pelanggan
                                JOIN Layanan l ON l.ID_Layanan = pl.ID_Layanan
-                               WHERE p.Nama_Pelanggan LIKE 'A%';"; // Contoh filter untuk analisis
+                               WHERE p.Nama_Pelanggan LIKE 'A%';";
 
             AnalyzeQuery(heavyQuery);
         }
@@ -368,21 +372,14 @@ namespace LayananService_C9
             {
                 DataGridViewRow row = dgvPemesanan.Rows[e.RowIndex];
                 txtIDPemesanan.Text = row.Cells["ID_Pemesanan"].Value.ToString();
-
-                // Cari ID_Pelanggan & ID_Layanan yang sesuai untuk mengisi ComboBox
                 string namaPelanggan = row.Cells["Nama_Pelanggan"].Value.ToString();
                 string namaLayanan = row.Cells["Nama_Layanan"].Value.ToString();
-
-                // Set ComboBox berdasarkan nama yang ditampilkan (kurang ideal, lebih baik pakai ID jika ada di grid)
                 cmbPelanggan.Text = namaPelanggan;
                 cmbLayanan.Text = namaLayanan;
-
                 cmbKategori.SelectedItem = row.Cells["Status_Pembayaran"].Value.ToString();
                 dtpTanggal.Value = Convert.ToDateTime(row.Cells["Tanggal_Pemesanan"].Value);
             }
         }
-
-        // ... (Tambahkan method event handler lain seperti btnBatal_Click, dll.)
 
         private void labelJenisPesanan_Click(object sender, EventArgs e)
         {

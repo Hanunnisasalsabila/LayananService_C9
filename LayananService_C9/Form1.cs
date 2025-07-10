@@ -8,23 +8,19 @@ using System.Text;
 using System.IO;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.Text.RegularExpressions; // Diperlukan untuk validasi email
 
 namespace LayananService_C9
 {
     public partial class Form1 : Form
     {
-        // Kontrol untuk panel login
+        // ... (Deklarasi variabel lain tetap sama) ...
         Panel panelLogin;
         TextBox txtUsername;
         TextBox txtPassword;
         Button btnLogin;
-
-        // Inisialisasi cache
         private readonly MemoryCache _cache = MemoryCache.Default;
-        private readonly CacheItemPolicy _policy = new CacheItemPolicy
-        {
-            AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5)
-        };
+        private readonly CacheItemPolicy _policy = new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(5) };
         private const string CacheKeyPelanggan = "PelangganData";
 
         public Form1()
@@ -35,11 +31,9 @@ namespace LayananService_C9
             panelLogin.BringToFront();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // Dibiarkan kosong, data dimuat setelah login
-        }
+        private void Form1_Load(object sender, EventArgs e) { }
 
+        // ... (Region Bagian Login, Modul Optimasi Query tetap sama) ...
         #region Bagian Login
         private void SetupLoginPanel()
         {
@@ -181,34 +175,52 @@ namespace LayananService_C9
         #endregion
 
         #region Modul Stored Procedure, Transaksi, dan Error Handling
-        private void btnSimpan_Click(object sender, EventArgs e)
+
+        // REKOMENDASI: Validasi di sisi aplikasi sebelum mengirim ke database
+        private bool IsDataValid()
         {
             if (string.IsNullOrWhiteSpace(txtNama.Text) || string.IsNullOrWhiteSpace(txtEmail.Text) || string.IsNullOrWhiteSpace(txtNoTelp.Text))
             {
                 MessageBox.Show("Semua kolom harus diisi!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                return false;
+            }
+            // Validasi format email sederhana
+            if (!txtEmail.Text.Contains("@") || !txtEmail.Text.Contains("."))
+            {
+                MessageBox.Show("Format email tidak valid. Pastikan menggunakan '@' dan '.' (contoh: email@domain.com).", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            // Validasi format nomor telepon
+            if (!Regex.IsMatch(txtNoTelp.Text, @"^08[0-9]{10,13}$"))
+            {
+                MessageBox.Show("Format No. Telepon tidak valid. Harus diawali '08' dan total panjang 12-15 digit angka.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            return true;
+        }
+
+        private void btnSimpan_Click(object sender, EventArgs e)
+        {
+            // Panggil validasi di sisi aplikasi terlebih dahulu
+            if (!IsDataValid())
+            {
+                return; // Hentikan proses jika data tidak valid
             }
 
             using (SqlConnection conn = Koneksi.GetConnection())
             {
-                // BARU: Deklarasi transaksi
                 SqlTransaction transaction = null;
                 try
                 {
                     conn.Open();
-                    // BARU: Memulai transaksi
                     transaction = conn.BeginTransaction();
 
-                    SqlCommand cmd = new SqlCommand("sp_CreatePelanggan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
+                    SqlCommand cmd = new SqlCommand("sp_CreatePelanggan", conn, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
-
                     cmd.Parameters.AddWithValue("@Nama_Pelanggan", txtNama.Text);
                     cmd.Parameters.AddWithValue("@Email", txtEmail.Text);
                     cmd.Parameters.AddWithValue("@No_Telp", txtNoTelp.Text);
-
                     cmd.ExecuteNonQuery();
-
-                    // BARU: Jika berhasil, commit perubahan
                     transaction.Commit();
 
                     MessageBox.Show("Data pelanggan berhasil ditambahkan!");
@@ -216,22 +228,115 @@ namespace LayananService_C9
                     TampilkanDataPelanggan();
                     BersihkanForm();
                 }
+                catch (SqlException sqlEx)
+                {
+                    transaction?.Rollback();
+                    HandleSqlException(sqlEx); // Panggil metode baru untuk menangani eror
+                }
                 catch (Exception ex)
                 {
+                    transaction?.Rollback();
                     MessageBox.Show("Gagal menambahkan data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    try
-                    {
-                        // BARU: Jika gagal, batalkan semua perubahan
-                        transaction?.Rollback();
-                    }
-                    catch (Exception exRollback)
-                    {
-                        MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
                 }
             }
         }
 
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (dgvPelanggan.SelectedRows.Count <= 0)
+            {
+                MessageBox.Show("Pilih data yang ingin diedit.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Panggil validasi di sisi aplikasi terlebih dahulu
+            if (!IsDataValid())
+            {
+                return; // Hentikan proses jika data tidak valid
+            }
+
+            int id = Convert.ToInt32(dgvPelanggan.SelectedRows[0].Cells["ID_Pelanggan"].Value);
+            using (SqlConnection conn = Koneksi.GetConnection())
+            {
+                SqlTransaction transaction = null;
+                try
+                {
+                    conn.Open();
+                    transaction = conn.BeginTransaction();
+                    SqlCommand cmd = new SqlCommand("sp_UpdatePelanggan", conn, transaction);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@ID_Pelanggan", id);
+                    cmd.Parameters.AddWithValue("@Nama_Pelanggan", txtNama.Text);
+                    cmd.Parameters.AddWithValue("@Email", txtEmail.Text);
+                    cmd.Parameters.AddWithValue("@No_Telp", txtNoTelp.Text);
+                    cmd.ExecuteNonQuery();
+                    transaction.Commit();
+
+                    MessageBox.Show("Data pelanggan berhasil diperbarui!");
+                    _cache.Remove(CacheKeyPelanggan);
+                    TampilkanDataPelanggan();
+                    BersihkanForm();
+                }
+                catch (SqlException sqlEx)
+                {
+                    transaction?.Rollback();
+                    HandleSqlException(sqlEx); // Panggil metode baru untuk menangani eror
+                }
+                catch (Exception ex)
+                {
+                    transaction?.Rollback();
+                    MessageBox.Show("Gagal memperbarui data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // MODIFIKASI: Metode terpusat untuk menangani semua eror SQL
+        private void HandleSqlException(SqlException sqlEx)
+        {
+            // Eror 2627: Pelanggaran UNIQUE KEY (data duplikat)
+            if (sqlEx.Number == 2627)
+            {
+                if (sqlEx.Message.Contains("UQ_Pelanggan_Email"))
+                {
+                    MessageBox.Show("Gagal. Email ini sudah terdaftar. Silakan gunakan email lain.", "Data Duplikat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("UQ_Pelanggan_NoTelp"))
+                {
+                    MessageBox.Show("Gagal. Nomor telepon ini sudah terdaftar. Silakan gunakan nomor lain.", "Data Duplikat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Gagal menyimpan karena ada data yang sama di database.", "Data Duplikat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            // Eror 547: Pelanggaran CHECK constraint (format data salah)
+            else if (sqlEx.Number == 547)
+            {
+                if (sqlEx.Message.Contains("Email"))
+                {
+                    MessageBox.Show("Format email tidak valid. Pastikan menggunakan '@'.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("No_Telp"))
+                {
+                    MessageBox.Show("Format No. Telepon tidak valid. Pastikan diawali '08' dan memiliki panjang 12-15 digit.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (sqlEx.Message.Contains("Nama_Pelanggan"))
+                {
+                    MessageBox.Show("Nama pelanggan hanya boleh berisi huruf dan spasi.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Data yang Anda masukkan tidak sesuai format yang ditentukan.", "Input Tidak Valid", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            // Untuk eror SQL lainnya
+            else
+            {
+                MessageBox.Show("Terjadi kesalahan pada database: " + sqlEx.Message, "Error Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // ... (Metode Hapus, UI, dan lainnya tetap sama) ...
         private void btnHapus_Click(object sender, EventArgs e)
         {
             if (dgvPelanggan.SelectedRows.Count > 0)
@@ -241,20 +346,15 @@ namespace LayananService_C9
                     int id = Convert.ToInt32(dgvPelanggan.SelectedRows[0].Cells["ID_Pelanggan"].Value);
                     using (SqlConnection conn = Koneksi.GetConnection())
                     {
-                        // BARU: Deklarasi transaksi
                         SqlTransaction transaction = null;
                         try
                         {
                             conn.Open();
-                            // BARU: Memulai transaksi
                             transaction = conn.BeginTransaction();
-
-                            SqlCommand cmd = new SqlCommand("sp_DeletePelanggan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
+                            SqlCommand cmd = new SqlCommand("sp_DeletePelanggan", conn, transaction);
                             cmd.CommandType = CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("@ID_Pelanggan", id);
                             cmd.ExecuteNonQuery();
-
-                            // BARU: Jika berhasil, commit perubahan
                             transaction.Commit();
 
                             MessageBox.Show("Data berhasil dihapus!");
@@ -265,15 +365,7 @@ namespace LayananService_C9
                         catch (Exception ex)
                         {
                             MessageBox.Show("Gagal menghapus data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            try
-                            {
-                                // BARU: Jika gagal, batalkan semua perubahan
-                                transaction?.Rollback();
-                            }
-                            catch (Exception exRollback)
-                            {
-                                MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
+                            transaction?.Rollback();
                         }
                     }
                 }
@@ -281,60 +373,6 @@ namespace LayananService_C9
             else
             {
                 MessageBox.Show("Pilih baris data yang ingin dihapus.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-        }
-
-        private void btnEdit_Click(object sender, EventArgs e)
-        {
-            if (dgvPelanggan.SelectedRows.Count > 0)
-            {
-                int id = Convert.ToInt32(dgvPelanggan.SelectedRows[0].Cells["ID_Pelanggan"].Value);
-                using (SqlConnection conn = Koneksi.GetConnection())
-                {
-                    // BARU: Deklarasi transaksi
-                    SqlTransaction transaction = null;
-                    try
-                    {
-                        conn.Open();
-                        // BARU: Memulai transaksi
-                        transaction = conn.BeginTransaction();
-
-                        SqlCommand cmd = new SqlCommand("sp_UpdatePelanggan", conn, transaction); // BARU: Mengaitkan command dengan transaksi
-                        cmd.CommandType = CommandType.StoredProcedure;
-
-                        cmd.Parameters.AddWithValue("@ID_Pelanggan", id);
-                        cmd.Parameters.AddWithValue("@Nama_Pelanggan", txtNama.Text);
-                        cmd.Parameters.AddWithValue("@Email", txtEmail.Text);
-                        cmd.Parameters.AddWithValue("@No_Telp", txtNoTelp.Text);
-
-                        cmd.ExecuteNonQuery();
-
-                        // BARU: Jika berhasil, commit perubahan
-                        transaction.Commit();
-
-                        MessageBox.Show("Data pelanggan berhasil diperbarui!");
-                        _cache.Remove(CacheKeyPelanggan);
-                        TampilkanDataPelanggan();
-                        BersihkanForm();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Gagal memperbarui data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        try
-                        {
-                            // BARU: Jika gagal, batalkan semua perubahan
-                            transaction?.Rollback();
-                        }
-                        catch (Exception exRollback)
-                        {
-                            MessageBox.Show("Gagal melakukan rollback: " + exRollback.Message, "Error Kritis", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Pilih data yang ingin diedit.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
         #endregion
@@ -345,7 +383,7 @@ namespace LayananService_C9
             PictureBox background = new PictureBox
             {
                 Dock = DockStyle.Fill,
-                Image = Image.FromFile("C:\\Users\\Acer\\OneDrive\\Pictures\\860.jpeg"),
+                Image = Properties.Resources.otomotif,
                 SizeMode = PictureBoxSizeMode.StretchImage
             };
             this.Controls.Add(background);
@@ -384,6 +422,8 @@ namespace LayananService_C9
         private void btnBatal_Click(object sender, EventArgs e)
         {
             BersihkanForm();
+            txtSearch.Text = "";
+            TampilkanDataPelanggan();
         }
 
         private void btnLayanan_Click(object sender, EventArgs e)
@@ -467,6 +507,52 @@ namespace LayananService_C9
             catch (Exception ex)
             {
                 MessageBox.Show("Error saat membaca file Excel: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void SearchPelanggan(string searchTerm)
+        {
+            try
+            {
+                using (SqlConnection conn = Koneksi.GetConnection())
+                {
+                    SqlCommand cmd = new SqlCommand("sp_SearchPelanggan", conn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@SearchTerm", searchTerm);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    dgvPelanggan.DataSource = dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal melakukan pencarian: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            string searchTerm = txtSearch.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                TampilkanDataPelanggan();
+            }
+            else
+            {
+                SearchPelanggan(searchTerm);
+            }
+        }
+
+        private void txtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnSearch_Click(this, new EventArgs());
+                e.SuppressKeyPress = true;
             }
         }
     }
